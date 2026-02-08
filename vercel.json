@@ -1,0 +1,14 @@
+{
+    "buildCommand": "cd allergy-scanner-frontend && npx expo export:web",
+    "outputDirectory": "allergy-scanner-frontend/dist",
+    "framework": null,
+    "rewrites": [
+        {
+            "source": "/(.*)",
+            "destination": "/index.html"
+        }
+    ],
+    "env": {
+        "EXPO_PUBLIC_API_URL": "https://allergenscan-backend.vercel.app/api"
+    }
+}
