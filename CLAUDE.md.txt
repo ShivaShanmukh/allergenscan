@@ -1,0 +1,63 @@
+# VERDANT – Claude.md (v1)
+
+## Project overview (for Claude)
+
+VERDANT is an Android-only MVP (API 26–34) AI-powered health companion that helps users make safer, healthier, and more sustainable food choices. It combines:
+- Instant allergen detection from barcode scans.
+- Sustainable store discovery on an interactive map (distance, price, diet filters).
+- An always-available AI assistant (Ivy) with voice, memory, and wellness support.
+
+Tech stack:
+- Frontend: React Native / Expo, Android portrait only, ARCore support.
+- Backend: Node.js / Express (or similar) with PostgreSQL.
+- Integrations: Camera, GPS/location, microphone, maps, external AI APIs.
+
+Primary goals:
+- Make allergen safety effortless and hands-free.
+- Help users find affordable, healthy, sustainable food nearby.
+- Build Ivy as a trusted, context-aware health and wellness companion.
+
+## Core user flows
+
+1. First-time onboarding:
+   - Capture allergies, dietary preferences, and health goals.
+   - Use this to personalize scans, recommendations, and Ivy responses.
+
+2. Scan product in store:
+   - User taps “Scan” from the dashboard.
+   - Scan barcode with camera.
+   - Show safety indicator (SAFE / CHECK / CAUTION) with allergen info + nutrition highlights.
+   - Ivy auto-speaks the result and offers safer alternatives nearby.
+
+3. Store discovery:
+   - Search for products (e.g. “gluten-free bread”).
+   - Filter by distance, price, rating, dietary tags.
+   - Show store list + map.
+   - Open store details and navigate via Google Maps.
+
+4. AI companion (Ivy):
+   - Trigger via “Hey Ivy” or tapping Ivy widget.
+   - Answer questions like “What’s safe for me?” or “Show cheap vegan protein nearby.”
+   - Provide wellness / therapeutic support related to food and stress.
+   - Use context: allergies, preferences, recent scans, location.
+
+5. Profile & tracking:
+   - Manage allergies, diet preferences, and goals.
+   - Show stats: scans, money saved, stores visited.
+   - Prepare for future: spending patterns, wellness trends.
+
+## Constraints & non-negotiables
+
+- Safety first: never recommend products that contain the user’s allergens.
+- Voice-first for critical safety: Ivy must clearly speak “unsafe” outcomes.
+- Privacy: user health data stays under user control; no silent data selling.
+- MVP scope: Android only, barcode scanning and maps require internet.
+
+## How I want you to work
+
+- Start in **plan mode** for any non-trivial feature: propose a short plan, then execute step by step.
+- Keep changes **small and reversible**: prefer small PR-sized edits over giant refactors.
+- Always try to:
+  - Run tests, typecheck, and lint after changes.
+  - Explain what you changed and why in plain language.
+- Ask for clarification when requirements are ambiguous instead of guessing.
