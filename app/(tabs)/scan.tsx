@@ -38,6 +38,7 @@ export default function ScanScreen() {
   const [barcode, setBarcode] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ScanResult | null>(null);
+  const [torch, setTorch] = useState(false);
 
   const hasPermission = permission?.granted ?? null;
 
@@ -261,26 +262,32 @@ export default function ScanScreen() {
   return (
     <View style={styles.cameraContainer}>
       <CameraView
+        facing="back"
+        enableTorch={torch}
         onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
         barcodeScannerSettings={{
-          barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'code39', 'qr'],
+          barcodeTypes: [
+            'ean13', 'ean8', 'upc_a', 'upc_e',
+            'code128', 'code39', 'code93',
+            'codabar', 'itf14', 'qr', 'pdf417', 'aztec', 'datamatrix',
+          ],
         }}
         style={StyleSheet.absoluteFillObject}
       />
 
-      <View style={styles.cameraShade} />
+      <View style={styles.cameraShade} pointerEvents="none" />
 
-      <View style={styles.topBar}>
+      <View style={styles.topBar} pointerEvents="box-none">
         <Text style={styles.topBarTitle}>Scan Product</Text>
         <Pressable
           style={styles.topBarButton}
-          onPress={() => Alert.alert('Flashlight unavailable', 'This scanner package in the current app does not expose flash control yet.')}
+          onPress={() => setTorch((prev) => !prev)}
         >
-          <Ionicons name="flash-off" size={20} color={V.white} />
+          <Ionicons name={torch ? 'flash' : 'flash-off'} size={20} color={V.white} />
         </Pressable>
       </View>
 
-      <View style={styles.scanFrameWrap}>
+      <View style={styles.scanFrameWrap} pointerEvents="none">
         <View style={styles.scanFrame}>
           <View style={[styles.corner, styles.cornerTopLeft]} />
           <View style={[styles.corner, styles.cornerTopRight]} />
@@ -318,7 +325,7 @@ const styles = StyleSheet.create({
   cameraContainer: { flex: 1, backgroundColor: '#0E1113' },
   cameraShade: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.28)',
+    backgroundColor: 'rgba(0,0,0,0.12)',
   },
   topBar: {
     position: 'absolute',
