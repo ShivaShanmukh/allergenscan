@@ -1,14 +1,22 @@
 {
-    "buildCommand": "cd allergy-scanner-frontend && npx expo export:web",
+    "buildCommand": "cd allergy-scanner-frontend && npm install && EXPO_PUBLIC_API_URL=/api npx expo export --platform web",
     "outputDirectory": "allergy-scanner-frontend/dist",
     "framework": null,
     "rewrites": [
         {
-            "source": "/(.*)",
+            "source": "/api/migrate",
+            "destination": "/api/migrate"
+        },
+        {
+            "source": "/api/(.*)",
+            "destination": "/api"
+        },
+        {
+            "source": "/((?!api/).*)",
             "destination": "/index.html"
         }
     ],
     "env": {
-        "EXPO_PUBLIC_API_URL": "https://allergenscan-backend.vercel.app/api"
+        "EXPO_PUBLIC_API_URL": "/api"
     }
 }
