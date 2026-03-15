@@ -189,8 +189,12 @@ app.get('/api/scan/history', (_req, res) => {
   });
 });
 
-const PORT = 4000;
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-  console.log('Test login: POST /api/auth/login with any email/password');
-});
+export default app;
+
+const PORT = process.env.PORT || 4000;
+if (process.env.VERCEL !== '1') {
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+    console.log('Test login: POST /api/auth/login with any email/password');
+  });
+}

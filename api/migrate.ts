@@ -1,6 +1,4 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { testDbConnection } from '../allergenscan/src/db.js';
-import { runMigrations } from '../allergenscan/src/migrate.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -13,12 +11,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(401).json({ message: 'Unauthorized' });
   }
 
-  try {
-    await testDbConnection();
-    await runMigrations();
-    return res.status(200).json({ message: 'Migrations completed' });
-  } catch (err: any) {
-    console.error('Migration error:', err);
-    return res.status(500).json({ message: 'Migration failed', error: err?.message });
-  }
+  return res.status(200).json({ message: 'Migrations not needed for mock backend' });
 }
