@@ -8,7 +8,7 @@ const getApiBaseUrl = (): string => {
         return process.env.EXPO_PUBLIC_API_URL;
     }
     if (Platform.OS === 'web') {
-        return `http://localhost:${DEV_BACKEND_PORT}/api`;
+        return '/api';
     }
     // On a physical device, Expo sets debuggerHost to "IP:PORT".
     // Use that IP so the device can reach the dev machine over LAN.

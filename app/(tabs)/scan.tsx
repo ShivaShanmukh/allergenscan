@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Platform,
@@ -39,6 +39,12 @@ export default function ScanScreen() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ScanResult | null>(null);
   const [torch, setTorch] = useState(false);
+
+  useEffect(() => {
+    if (!isWeb) {
+      requestPermission();
+    }
+  }, []);
 
   const hasPermission = permission?.granted ?? null;
 
