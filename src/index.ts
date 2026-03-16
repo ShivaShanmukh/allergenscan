@@ -112,10 +112,6 @@ app.post('/api/profile/onboarding-complete', (_req, res) => {
 });
 
 app.post('/api/scan', (req, res) => {
-  const auth = req.headers.authorization;
-  if (!auth?.includes('fake-jwt-token')) {
-    return res.status(401).json({ message: 'Login required' });
-  }
   const { barcode } = req.body;
 
   const products: Record<string, any> = {
