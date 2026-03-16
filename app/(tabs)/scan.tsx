@@ -39,6 +39,7 @@ export default function ScanScreen() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ScanResult | null>(null);
   const [torch, setTorch] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isWeb) {
@@ -57,24 +58,33 @@ export default function ScanScreen() {
     await performScan(data);
   };
 
+  const showError = (msg: string) => {
+    setError(msg);
+    if (!isWeb) Alert.alert('Error', msg);
+    setTimeout(() => setError(null), 4000);
+  };
+
   const performScan = async (barcodeData: string) => {
     setLoading(true);
+    setError(null);
     try {
       const token = await AsyncStorage.getItem('authToken');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
       const res = await fetch(`${API_BASE_URL}/scan`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers,
         body: JSON.stringify({ barcode: barcodeData.trim() }),
       });
       const data = await res.json();
       if (res.ok) {
         setResult(data);
       } else {
-        Alert.alert('Scan Error', data.message || 'Product not found');
+        showError(data.message || 'Product not found');
         setScanned(false);
       }
     } catch {
-      Alert.alert('Network Error', 'Cannot connect to server');
+      showError('Cannot connect to server. Check your network.');
       setScanned(false);
     }
     setLoading(false);
@@ -252,6 +262,12 @@ export default function ScanScreen() {
           >
             <Text style={styles.primaryActionText}>{loading ? 'Scanning...' : 'Scan Product'}</Text>
           </Pressable>
+          {!!error && (
+            <View style={styles.errorBanner}>
+              <Ionicons name="alert-circle" size={16} color="#D32F2F" />
+              <Text style={styles.errorBannerText}>{error}</Text>
+            </View>
+          )}
         </View>
       </View>
     );
@@ -592,4 +608,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   scanAnotherButtonText: { color: V.white, fontSize: 16, fontWeight: '700' },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 12,
+    backgroundColor: '#FFEBEE',
+    borderRadius: 12,
+    padding: 12,
+  },
+  errorBannerText: { color: '#D32F2F', fontSize: 14, fontWeight: '600', flex: 1 },
 });
