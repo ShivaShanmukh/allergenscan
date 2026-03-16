@@ -7,6 +7,63 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const ALLERGEN_TAG_MAP: Record<string, { id: number; name: string }> = {
+  'en:milk': { id: 3, name: 'Milk' },
+  'en:soybeans': { id: 6, name: 'Soy' },
+  'en:peanuts': { id: 1, name: 'Peanuts' },
+  'en:nuts': { id: 2, name: 'Tree Nuts' },
+  'en:eggs': { id: 4, name: 'Eggs' },
+  'en:gluten': { id: 5, name: 'Gluten' },
+  'en:wheat': { id: 5, name: 'Wheat' },
+  'en:fish': { id: 7, name: 'Fish' },
+  'en:crustaceans': { id: 8, name: 'Shellfish' },
+  'en:celery': { id: 9, name: 'Celery' },
+  'en:mustard': { id: 10, name: 'Mustard' },
+  'en:sesame-seeds': { id: 11, name: 'Sesame' },
+  'en:lupin': { id: 12, name: 'Lupin' },
+  'en:molluscs': { id: 13, name: 'Molluscs' },
+  'en:sulphur-dioxide-and-sulphites': { id: 14, name: 'Sulphites' },
+};
+
+const INGREDIENT_KEYWORDS: { keywords: string[]; allergen: { id: number; name: string } }[] = [
+  { keywords: ['milk', 'dairy', 'lactose', 'whey', 'casein', 'cream', 'butter', 'cheese'], allergen: { id: 3, name: 'Milk' } },
+  { keywords: ['soy', 'soya', 'soybean', 'soja'], allergen: { id: 6, name: 'Soy' } },
+  { keywords: ['peanut', 'arachid'], allergen: { id: 1, name: 'Peanuts' } },
+  { keywords: ['almond', 'cashew', 'walnut', 'hazelnut', 'pistachio', 'pecan', 'macadamia', 'brazil nut', 'noisette'], allergen: { id: 2, name: 'Tree Nuts' } },
+  { keywords: ['egg', 'oeuf'], allergen: { id: 4, name: 'Eggs' } },
+  { keywords: ['wheat', 'gluten', 'flour', 'blé'], allergen: { id: 5, name: 'Gluten' } },
+  { keywords: ['fish', 'cod', 'salmon', 'tuna', 'anchov', 'poisson'], allergen: { id: 7, name: 'Fish' } },
+  { keywords: ['shellfish', 'shrimp', 'crab', 'lobster', 'prawn', 'crustacean'], allergen: { id: 8, name: 'Shellfish' } },
+  { keywords: ['sesame', 'sésame'], allergen: { id: 11, name: 'Sesame' } },
+  { keywords: ['mustard', 'moutarde'], allergen: { id: 10, name: 'Mustard' } },
+  { keywords: ['celery', 'céleri'], allergen: { id: 9, name: 'Celery' } },
+];
+
+function detectAllergens(allergenTags: string[], ingredientsText: string) {
+  const found: { id: number; name: string }[] = [];
+  const seen = new Set<number>();
+
+  for (const tag of allergenTags) {
+    const mapped = ALLERGEN_TAG_MAP[tag.toLowerCase()];
+    if (mapped && !seen.has(mapped.id)) {
+      seen.add(mapped.id);
+      found.push(mapped);
+    }
+  }
+
+  const lower = (ingredientsText || '').toLowerCase();
+  for (const { keywords, allergen } of INGREDIENT_KEYWORDS) {
+    if (!seen.has(allergen.id) && keywords.some(kw => lower.includes(kw))) {
+      seen.add(allergen.id);
+      found.push(allergen);
+    }
+  }
+
+  return found;
+}
+
+let userAllergenIds = new Set([3, 6]);
+
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
 app.post('/api/auth/login', (req, res) => {
@@ -96,7 +153,9 @@ app.get('/api/profile/goals', (_req, res) => {
 });
 
 app.put('/api/profile/allergens', (req, res) => {
-  res.json({ message: 'Allergens updated', count: req.body.allergenIds?.length || 0 });
+  const ids: number[] = req.body.allergenIds || [];
+  if (ids.length > 0) userAllergenIds = new Set(ids);
+  res.json({ message: 'Allergens updated', count: ids.length });
 });
 
 app.put('/api/profile/dietary', (req, res) => {
@@ -111,58 +170,58 @@ app.post('/api/profile/onboarding-complete', (_req, res) => {
   res.json({ message: 'Onboarding complete' });
 });
 
-app.post('/api/scan', (req, res) => {
+app.post('/api/scan', async (req, res) => {
   const { barcode } = req.body;
+  if (!barcode) {
+    return res.status(400).json({ message: 'Barcode is required' });
+  }
 
-  const products: Record<string, any> = {
-    '3017620422003': {
-      name: 'Nutella Hazelnut Spread',
-      brand: 'Ferrero',
-      ingredients: 'Sugar, Palm Oil, Hazelnuts, Cocoa, Skim Milk, Whey Powder, Lecithin (Soy), Vanillin',
-      allergenWarnings: [
-        { id: 3, name: 'Milk' },
-        { id: 6, name: 'Soy' },
-        { id: 2, name: 'Tree Nuts' }
-      ],
-      safe: false,
-      riskLevel: 'high'
-    },
-    '5000159484695': {
-      name: 'Cadbury Dairy Milk Chocolate',
-      brand: 'Cadbury',
-      ingredients: 'Milk, Sugar, Cocoa Butter, Cocoa Mass, Vegetable Fats, Emulsifiers (Soy Lecithin)',
-      allergenWarnings: [
-        { id: 3, name: 'Milk' },
-        { id: 6, name: 'Soy' }
-      ],
-      safe: false,
-      riskLevel: 'caution'
-    },
-    '0016000275287': {
-      name: 'Organic Apple Juice',
-      brand: 'Simply Organic',
-      ingredients: 'Organic Apple Juice',
-      allergenWarnings: [],
-      safe: true,
-      riskLevel: 'safe'
+  try {
+    const offRes = await fetch(
+      `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json`,
+      { headers: { 'User-Agent': 'VerdantAllergenScanner/1.0' } }
+    );
+    const offData = await offRes.json() as any;
+
+    if (offData.status !== 1 || !offData.product) {
+      return res.json({
+        product: { name: `Product ${barcode}`, brand: 'Not found in database', ingredients: 'Not available' },
+        allergenWarnings: [],
+        safe: true,
+        riskLevel: 'safe',
+        source: 'not_found'
+      });
     }
-  };
 
-  const product = products[barcode];
+    const p = offData.product;
+    const name = p.product_name || p.product_name_en || `Product ${barcode}`;
+    const brand = p.brands || 'Unknown Brand';
+    const ingredients = p.ingredients_text || p.ingredients_text_en || 'Ingredients not listed';
+    const imageUrl = p.image_front_small_url || p.image_url || null;
 
-  if (product) {
+    const allergenTags: string[] = p.allergens_tags || [];
+    const detectedAllergens = detectAllergens(allergenTags, ingredients);
+
+    const profileMatches = detectedAllergens.filter(a => userAllergenIds.has(a.id));
+    const safe = profileMatches.length === 0;
+    let riskLevel = 'safe';
+    if (profileMatches.length >= 2) riskLevel = 'high';
+    else if (profileMatches.length === 1) riskLevel = 'caution';
+
     res.json({
-      product: { name: product.name, brand: product.brand, ingredients: product.ingredients },
-      allergenWarnings: product.allergenWarnings,
-      safe: product.safe,
-      riskLevel: product.riskLevel
+      product: { name, brand, ingredients, imageUrl },
+      allergenWarnings: detectedAllergens,
+      safe,
+      riskLevel,
+      source: 'openfoodfacts'
     });
-  } else {
+  } catch {
     res.json({
-      product: { name: `Product ${barcode}`, brand: 'Unknown Brand', ingredients: 'Ingredients not available' },
+      product: { name: `Product ${barcode}`, brand: 'Unknown', ingredients: 'Could not fetch product data' },
       allergenWarnings: [],
       safe: true,
-      riskLevel: 'safe'
+      riskLevel: 'safe',
+      source: 'error'
     });
   }
 });
