@@ -268,11 +268,9 @@ export default function ScanScreen() {
   return (
     <View style={styles.cameraContainer}>
       <CameraView
-        active
         facing="back"
         enableTorch={torch}
         onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
-        barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'qr'] }}
         style={StyleSheet.absoluteFillObject}
       />
 
